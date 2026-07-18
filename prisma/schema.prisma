@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  password        String?
+  xp              Int      @default(0)
+  level           Int      @default(1)
+  streak          Int      @default(0)
+  lastActiveDate  DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  goals           Goal[]
+}
+
+model Goal {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String?
+  steps           String?
+  source          String?
+  isSuggested     Boolean  @default(false)
+  parentGoalId    String?
+  parentGoal      Goal?    @relation("GoalHierarchy", fields: [parentGoalId], references: [id])
+  subGoals        Goal[]   @relation("GoalHierarchy")
+
+  status          String   @default("draft")
+  priority        String   @default("medium")
+  level           String   @default("beginner")
+  category        String   @default("personal")
+  progress        Float    @default(0)
+
+  targetDate      DateTime?
+  startDate       DateTime?
+  completedAt     DateTime?
+
+  reminderTime    String?
+  reminderEnabled Boolean  @default(false)
+  color           String?
+
+  health          GoalHealth?
+  quality         GoalQuality?
+  recommendations GoalRecommendation[]
+  milestones      GoalMilestone[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([category])
+  @@index([level])
+  @@index([priority])
+  @@index([targetDate])
+  @@index([isSuggested])
+}
+
+model GoalMilestone {
+  id              String   @id @default(cuid())
+  goalId          String
+  goal            Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  title           String
+  description     String?
+  completed       Boolean  @default(false)
+  order           Int      @default(0)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([goalId])
+}
+
+model GoalHealth {
+  id              String   @id @default(cuid())
+  goalId          String   @unique
+  goal            Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  healthScore     Float    @default(0)
+  momentum        String?
+  consistency     Float    @default(0)
+  riskLevel       String?
+  lastCalculatedAt DateTime @default(now())
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([healthScore])
+}
+
+model GoalQuality {
+  id              String   @id @default(cuid())
+  goalId          String   @unique
+  goal            Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  qualityScore    Float    @default(0)
+  clarity         Float
+  realism         Float
+  visionAlignment Float
+  executionPlan   Float
+  deadline        Float
+  measurability   Float
+  commitment      Float
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([qualityScore])
+}
+
+model GoalRecommendation {
+  id              String   @id @default(cuid())
+  goalId          String
+  goal            Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  type            String   // merge, split, pause, archive, cancel, priority, timeline
+  title           String
+  description     String
+  impact          Float    @default(0)
+  confidence      Float    @default(0)
+  applied         Boolean  @default(false)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([goalId])
+  @@index([applied])
+}
